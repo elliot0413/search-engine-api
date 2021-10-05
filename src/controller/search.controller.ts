@@ -1,7 +1,10 @@
 import express from "express";
 import { KMR } from "koalanlp/API";
 import { Tagger } from "koalanlp/proc";
-
+import { Op } from "sequelize";
+import { HasMany } from "sequelize-typescript";
+import { Keyword } from "../models/Keyword";
+import { Link } from "../models/Link";
 const router = express.Router();
 
 router.get("/", async (req, res) => {
@@ -30,8 +33,15 @@ router.get("/", async (req, res) => {
       }
     }
   }
-  console.log(searchKeywords);
-  return res.status(200).json(q);
+  const keywords = await Keyword.findAll({
+    where: {
+      name: {
+        [Op.in]: Array.from(searchKeywords.values()),
+      },
+    },
+    include: [Link],
+  });
+  return res.status(200).json(keywords);
 });
 
 export default router;
