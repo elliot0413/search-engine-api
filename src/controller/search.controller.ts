@@ -2,10 +2,17 @@ import express from "express";
 import { KMR } from "koalanlp/API";
 import { Tagger } from "koalanlp/proc";
 import { Op } from "sequelize";
-import { HasMany } from "sequelize-typescript";
+import sequelize from "sequelize";
 import { Keyword } from "../models/Keyword";
 import { Link } from "../models/Link";
+
 const router = express.Router();
+
+type FrequentLink = {
+  url: string;
+  content: string;
+  count: number;
+};
 
 router.get("/", async (req, res) => {
   const { q } = req.query;
@@ -33,7 +40,7 @@ router.get("/", async (req, res) => {
       }
     }
   }
-  const keywords = await Keyword.findAll({
+  /*const keywords = await Keyword.findAll({
     where: {
       name: {
         [Op.in]: Array.from(searchKeywords.values()),
@@ -41,7 +48,52 @@ router.get("/", async (req, res) => {
     },
     include: [Link],
   });
-  return res.status(200).json(keywords);
+
+  //const frequentLink = new Map<string, FrequentLink>();
+
+  keywords.forEach((keyword) => {
+    keyword.links.forEach((link) => {
+      const exist = frequentLink.get(link.url);
+      if (exist) {
+        exist.count = exist.count + 1;
+        frequentLink.set(link.url, exist);
+      } else {
+        frequentLink.set(link.url, {
+          url: link.url,
+          content: link.description,
+          count: 1,
+        });
+      }
+    });
+  });
+
+  const result = Array.from(frequentLink.values()).sort(
+    (link1, link2) => link2.count - link1.count
+  );
+*/
+  const links = await Link.findAll({
+    include: [
+      {
+        model: Keyword,
+        where: {
+          name: {
+            [Op.in]: Array.from(searchKeywords.values()),
+          },
+        },
+        attributes: [],
+        through: {
+          attributes: [],
+        },
+      },
+    ],
+    attributes: [
+      "url",
+      [sequelize.fn("count", sequelize.col("Link.url")), "total"],
+    ],
+    group: ["Link.id"],
+  });
+
+  return res.status(200).json(links);
 });
 
 export default router;
