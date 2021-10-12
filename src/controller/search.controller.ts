@@ -91,6 +91,7 @@ router.get("/", async (req, res) => {
       [sequelize.fn("count", sequelize.col("Link.url")), "total"],
     ],
     group: ["Link.id"],
+    order: [[sequelize.fn("count", sequelize.col("Link.url")), "DESC"]],
   });
 
   return res.status(200).json(links);
