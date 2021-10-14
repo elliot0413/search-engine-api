@@ -88,13 +88,23 @@ router.get("/", async (req, res) => {
     ],
     attributes: [
       "url",
+      "description",
       [sequelize.fn("count", sequelize.col("Link.url")), "total"],
     ],
     group: ["Link.id"],
     order: [[sequelize.fn("count", sequelize.col("Link.url")), "DESC"]],
   });
 
-  return res.status(200).json(links);
+  const array = links.map((link: any) => {
+    console.log(link);
+    return {
+      url: link.url,
+      content: link.description,
+      count: link.getDataValue("total"),
+    };
+  });
+
+  return res.status(200).json(array);
 });
 
 export default router;
